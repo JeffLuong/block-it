@@ -1,9 +1,13 @@
+export type Matrix = number[][];
+
 class Piece {
-  constructor(matrix) {
+  matrix: Matrix;
+
+  constructor(matrix: Matrix) {
     this.matrix = matrix;
   }
 
-  rotate(dir) {
+  rotate(dir: number): void {
     const len = this.matrix.length;
     if (len > 2) {
       for (let y = 0; y < len; y++) {

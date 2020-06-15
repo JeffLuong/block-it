@@ -1,23 +1,33 @@
 import Player from './Player';
 import Pieces, { Colors } from '../components/Pieces';
-import { UPDATE_SCORE, RESET_SCORE } from '../hooks/useScore';
+import { UPDATE_SCORE, RESET_SCORE, ScoreAction } from '../hooks/useScore';
+import { Matrix } from './Piece';
 
-const DROP_INTERVAL = 1000;
+type CreateShadowBoard = (w: number, h: number) => number[][];
+type DrawMatrix = (matrix: Matrix, offset: { x: number, y: number }) => void;
+
+const DROP_INTERVAL = 750;
 const randomPiece = () => Pieces[Math.floor(Math.random() * Pieces.length)];
-const createShadowBoard = (w, h) => new Array(h).fill([]).reduce(a => ([...a, new Array(w).fill(0)]), []);
+const createShadowBoard: CreateShadowBoard = (w, h) =>
+  new Array(h).fill([]).reduce(a => ([...a, new Array(w).fill(0)]), []);
 
 class Game {
-  constructor(context, updateScore) {
-    const piece = randomPiece();
-    const player = new Player(piece);
+  rotatePiece: (dir: number) => void;
+  dropPlayer: () => void;
+  movePlayer: (dir: number) => void;
+  pause: () => void;
+  init: (tick?: number) => void;
+
+  constructor(context: CanvasRenderingContext2D, updateScore: React.Dispatch<ScoreAction>) {
+    const player = new Player(randomPiece());
     const shadowBoard = createShadowBoard(context.canvas.width / 35, context.canvas.height / 35);
     let prevTick = 0;
     let dropTick = 0;
     let paused = false;
 
-    const createMatrix = (pieceMatrix, offset) => {
-      pieceMatrix.forEach((row, y) => {
-        row.forEach((val, x) => {
+    const drawMatrix: DrawMatrix = (pieceMatrix, offset) => {
+      pieceMatrix.forEach((row: number[], y: number) => {
+        row.forEach((val: number, x: number) => {
           if (val > 0) {
             context.fillStyle = Colors[val];
             context.fillRect(
@@ -31,19 +41,20 @@ class Game {
       })
     };
 
-    const trackPiece = () => {
-      const { piece: { matrix }, position } = player;
-      matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
+    const trackPiece = (): void => {
+      const { x, y } = player.getPos();
+      player.getPiece().matrix.forEach((row, _y) => {
+        row.forEach((value, _x) => {
           if (value > 0) {
-            shadowBoard[y + position.y][x + position.x] = value;
+            shadowBoard[_y + y][_x + x] = value;
           }
         });
       });
     };
 
-    const hasCollided = () => {
-      const { piece: { matrix: m }, position: { x, y } } = player;
+    const hasCollided = (): boolean => {
+      const { x, y } = player.getPos();
+      const { matrix: m } = player.getPiece();
       for (let i = 0; i < m.length; i++) {
         for (let j = 0; j < m[i].length; j++) {
           if (m[i][j] !== 0 && (shadowBoard[i + y] && shadowBoard[i + y][j + x]) !== 0) {
@@ -54,21 +65,23 @@ class Game {
       return false;
     };
 
-    const draw = () => {
+    const draw = (): void => {
       context.fillStyle = '#000000';
       context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-      createMatrix(shadowBoard, { x: 0, y: 0 });
-      createMatrix(player.piece.matrix, player.position);
+      drawMatrix(shadowBoard, { x: 0, y: 0 });
+      drawMatrix(player.getPiece().matrix, player.getPos());
     };
 
-    const resetPlayer = () => {
-      player.piece = randomPiece();
-      player.position.y = 0;
-      player.position.x = Math.floor(
-        shadowBoard[0].length / 2
-      ) - Math.floor(
-        player.piece.matrix[0].length / 2
-      );
+    const resetPlayer = (): void => {
+      player.setPiece(randomPiece());
+      player.setPos({
+        y: 0,
+        x: Math.floor(
+          shadowBoard[0].length / 2
+        ) - Math.floor(
+          player.getPiece().matrix[0].length / 2
+        )
+      })
 
       if (hasCollided()) {
         shadowBoard.forEach(row => row.fill(0));
@@ -76,7 +89,7 @@ class Game {
       }
     };
 
-    const destroyRows = () => {
+    const destroyRows = (): void => {
       let rows = 1;
       row: for (let y = shadowBoard.length - 1; y > 0; y--) {
         for (let x = 0; x < shadowBoard[y].length; x++) {
@@ -93,26 +106,26 @@ class Game {
       }
     };
 
-    this.rotatePiece = (dir) => {
-      const { piece, position } = player;
-      const currPos = position.x;
+    this.rotatePiece = dir => {
+      const { x, y } = player.getPos();
       let offset = 1;
-      piece.rotate(dir);
+      player.getPiece().rotate(dir);
       while (hasCollided()) {
-        position.x += offset;
+        player.setPos({ y, x: player.getPos().x + offset });
         offset = -(offset + (offset > 0 ? 1 : -1))
-        if (offset > piece.matrix[0].length) {
-          piece.rotate(-dir);
-          player.position.x = currPos;
+        if (offset > player.getPiece().matrix[0].length) {
+          player.getPiece().rotate(-dir);
+          player.setPos({ y, x });
           break;
         }
       }
     };
 
     this.dropPlayer = () => {
-      player.position.y += 1;
+      const { x, y } = player.getPos();
+      player.setPos({ x, y: y + 1 });
       if (hasCollided()) {
-        player.position.y -= 1;
+        player.setPos({ x, y });
         trackPiece();
         resetPlayer();
         destroyRows();
@@ -121,9 +134,10 @@ class Game {
     };
 
     this.movePlayer = dir => {
-      player.position.x += dir;
+      const { x, y } = player.getPos();
+      player.setPos({ y, x: x + dir });
       if (hasCollided()) {
-        player.position.x -= dir;
+        player.setPos({ y, x });
       }
     };
 

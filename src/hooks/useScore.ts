@@ -3,9 +3,18 @@ import { useReducer } from 'react';
 export const RESET_SCORE = 'RESET_SCORE';
 export const UPDATE_SCORE = 'UPDATE_SCORE';
 
-const scoreReducer = (state, action) => {
+export type ScoreAction = {
+  type: typeof RESET_SCORE | typeof UPDATE_SCORE,
+  payload?: {
+    score: number
+  }
+}
+type UseScore = (init: number) => [number, React.Dispatch<ScoreAction>];
+type ScoreReducer = (state: number, action: ScoreAction) => number;
+
+const scoreReducer: ScoreReducer = (state, action) => {
   const { type, payload } = action;
-  if (type === 'UPDATE_SCORE') {
+  if (type === 'UPDATE_SCORE' && payload) {
     const newScore = state + payload.score;
     return newScore;
   }
@@ -15,7 +24,7 @@ const scoreReducer = (state, action) => {
   return state;
 };
 
-const useScore = (initial = 0) => {
+const useScore: UseScore = (initial: number = 0) => {
   const [score, dispatch] = useReducer(scoreReducer, initial);
   return [score, dispatch];
 };

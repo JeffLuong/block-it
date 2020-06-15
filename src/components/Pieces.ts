@@ -1,6 +1,8 @@
 import Piece from '../models/Piece';
 
-export const Colors = {
+export const Colors: {
+  [num: number]: string
+} = {
   1: 'yellow',
   2: 'purple',
   3: 'blue',
