@@ -1,0 +1,12 @@
+.GameContainer {
+  --game-container_padding: 1rem;
+  --scoreboard_width: 12.5rem;
+  display: flex;
+  padding: var(--game-container_padding);
+  justify-content: center;
+}
+
+.StartGameWrapper {
+  height: calc(100vh - var(--game-container_padding));
+  width: 100%;
+}

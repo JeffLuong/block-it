@@ -21,7 +21,7 @@ class Player {
       this.getPiece = () => _piece;
     };
 
-    this.getPos = () => ({ x: 5, y: 0 });
+    this.getPos = () => ({ x: 5, y: -1 });
 
     this.setPos = (position: Position) => {
       this.getPos = () => position;

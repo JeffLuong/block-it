@@ -1,0 +1,45 @@
+@keyframes scaleVert {
+  0% {
+    transform: scaleY(.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(.25);
+  }
+}
+
+.Loader {
+  padding: 5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.LoaderBar {
+  background-color: #00b300;
+  width: .5rem;
+  height: 3rem;
+  transform: scaleY(.25);
+  animation: scaleVert ease-in-out .75s infinite;
+}
+
+.LoaderBar:not(:last-of-type) {
+  margin-right: .5rem;
+}
+
+.LoaderBar:nth-of-type(2) {
+  animation-delay: .125s;
+}
+
+.LoaderBar:nth-of-type(3) {
+  animation-delay: .25s;
+}
+
+.LoaderBar:nth-of-type(4) {
+  animation-delay: .375s;
+}
+
+.LoaderBar:last-of-type {
+  animation-delay: .5s;
+}

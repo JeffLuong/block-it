@@ -4,7 +4,8 @@ class Piece {
   matrix: Matrix;
 
   constructor(matrix: Matrix) {
-    this.matrix = matrix;
+    // Copy matrix
+    this.matrix = matrix.reduce((a: Matrix, c: number[]) => [...a, c.slice()], []);
   }
 
   rotate(dir: number): void {

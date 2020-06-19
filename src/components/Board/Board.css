@@ -1,0 +1,53 @@
+@keyframes fadeIn {
+  0% {
+    background-color: rgba(0, 0, 0, 0);
+  }
+  100% {
+    background-color: rgba(0, 0, 0, .5);
+  }
+}
+
+@keyframes opacityIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+canvas {
+  opacity: 0;
+  animation: opacityIn ease-in .25s forwards;
+}
+
+.StatsBoard {
+  margin-left: 2rem;
+  text-align: left;
+}
+
+.Controls {
+  text-align: left;
+  width: calc(var(--scoreboard_width) + 2rem);
+}
+
+.GameOverWrapper {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0);
+  animation: fadeIn ease-in-out .5s forwards;
+  justify-content: center;
+  align-items: center;
+}
+
+.GameOverContent h1 {
+  color: #ffffff;
+}
+
+.Scoreboard {
+  width: var(--scoreboard_width);
+}
