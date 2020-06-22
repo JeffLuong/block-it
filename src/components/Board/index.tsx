@@ -7,18 +7,25 @@ import useScore, { MetricsState } from '../../hooks/useScore';
 import './Board.css';
 import Button from '../Button';
 import { Matrix } from '../../models/Piece';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 // Need to extend Event because KeyboardEvent is not compatible with Event
 interface CustomKBEvent extends Event {
   keyCode?: number;
 }
 
+interface SBProps extends MetricsState {
+  topScore: number;
+};
+
 const { useRef, useEffect, useState } = React;
 const BOARD_SCALE = 35;
 const getContext = (ref: React.RefObject<HTMLCanvasElement>) => ref.current && ref.current.getContext('2d');
 
-const Scoreboard: React.FC<MetricsState> = ({ score, rows }) => (
+const Scoreboard: React.FC<SBProps> = ({ score, rows, topScore }) => (
   <aside className="Scoreboard">
+    <p>Top Score</p>
+    <h4 style={{ marginTop: 0 }}>{topScore}</h4>
     <p>Score</p>
     <h4 style={{ marginTop: 0 }}>{score}</h4>
     <p>Rows</p>
@@ -79,6 +86,7 @@ const Board: React.FC<{ width: number, height: number }> = ({ width, height }) =
   const [isGameOver, setGameOver] = useState(false);
   const [nextPiece, updateNextPiece] = useState<Matrix>([]);
   const [metrics, updateScore] = useScore({ score: 0, rows: 0 });
+  const [topScore, setTopScore] = useLocalStorage('blockItTopScore', metrics.score);
   const onGameOver = () => setGameOver(true);
   const onGameStart = () => setGameOver(false);
   const startGame = () => {
@@ -95,6 +103,12 @@ const Board: React.FC<{ width: number, height: number }> = ({ width, height }) =
       game.current.init();
     }
   }, []);
+
+  useEffect(() => {
+    if (topScore < metrics.score) {
+      setTopScore(metrics.score);
+    }
+  }, [isGameOver, metrics.score, topScore, setTopScore]);
 
   useEventListener('keydown', (event: CustomKBEvent) => {
     const { current: _game } = game;
@@ -134,7 +148,7 @@ const Board: React.FC<{ width: number, height: number }> = ({ width, height }) =
         width={width * BOARD_SCALE}
         height={height * BOARD_SCALE} />
       <div className="StatsBoard">
-        <Scoreboard score={metrics.score} rows={metrics.rows} />
+        <Scoreboard score={metrics.score} rows={metrics.rows} topScore={topScore} />
         <NextPieceDisplay piece={nextPiece} />
       </div>
       {isGameOver && <GameOver startGame={startGame} />}
