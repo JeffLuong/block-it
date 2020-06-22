@@ -6,7 +6,8 @@ import { UPDATE_SCORE, RESET_SCORE, ScoreAction } from '../hooks/useScore';
 type CreateShadowBoard = (w: number, h: number) => number[][];
 type DrawMatrix = (ctx: CanvasRenderingContext2D, matrix: Matrix, offset: { x: number, y: number }) => void;
 
-const DROP_INTERVAL = 750;
+const SLOWEST_DROP_INT = 1000;
+const FASTEST_DROP_INT = 100;
 const randomPiece = () => new Piece(Pieces[Math.floor(Math.random() * Pieces.length)]);
 const createShadowBoard: CreateShadowBoard = (w, h) =>
   new Array(h).fill([]).reduce(a => ([...a, new Array(w).fill(0)]), []);
@@ -38,6 +39,8 @@ class Game {
   ) {
     const player = new Player(randomPiece());
     const shadowBoard = createShadowBoard(context.canvas.width / 35, context.canvas.height / 35);
+    let currTime = Date.now();
+    let interval = SLOWEST_DROP_INT;
     let nextPiece = randomPiece();
     let prevTick = 0;
     let dropTick = 0;
@@ -103,6 +106,7 @@ class Game {
     const destroyRows = (): void => {
       let score = 0;
       let rowMultiplier = 1;
+      let speedBonus = Math.floor((SLOWEST_DROP_INT - interval) / 10);
       let rows = 0;
       row: for (let y = shadowBoard.length - 1; y > 0; y--) {
         for (let x = 0; x < shadowBoard[y].length; x++) {
@@ -113,11 +117,29 @@ class Game {
         const row = shadowBoard.splice(y, 1)[0].fill(0);
         shadowBoard.unshift(row);
         y++;
-        score = rowMultiplier * 10;
+        score = (rowMultiplier * 10) + speedBonus;
         rowMultiplier *= 2;
         rows++;
       }
       updateScore({ type: UPDATE_SCORE, payload: { score, rows } });
+    };
+
+    const decrementDropInterval = (now: number): void => {
+      let decrement = 250;
+      if (interval <= 250) {
+        decrement = interval === 250 ? 125 : 25;
+      }
+      interval -= decrement;
+      currTime = now;
+    };
+
+    const resetGame = () => {
+      gameOver = false;
+      interval = SLOWEST_DROP_INT;
+      currTime = Date.now();
+      shadowBoard.forEach(row => row.fill(0));
+      updateScore({ type: RESET_SCORE });
+      resetPlayer();
     };
 
     this.rotatePiece = dir => {
@@ -159,30 +181,36 @@ class Game {
       paused = !paused;
     };
 
+    const _update = (tick: number) => {
+      if (!paused) {
+        const delta = tick - prevTick;
+        prevTick = tick;
+
+        dropTick += delta;
+
+        if (dropTick > interval) {
+          this.dropPlayer();
+          // If 4 minutes passed, decrease drop interval
+          const now = Date.now();
+          if ((interval > FASTEST_DROP_INT) && (now - currTime > 180000)) {
+            decrementDropInterval(now);
+          }
+        }
+        draw();
+      }
+    };
+
     const update = (tick = 0) => {
       if (!gameOver) {
-        if (!paused) {
-          const delta = tick - prevTick;
-          prevTick = tick;
-  
-          dropTick += delta;
-  
-          if (dropTick > DROP_INTERVAL) {
-            this.dropPlayer();
-          }
-          draw();
-        }
+        _update(tick);
         window.requestAnimationFrame(update);
       }
-    }
+    };
 
     this.init = () => {
       onGameStart();
       if (gameOver) {
-        gameOver = false;
-        shadowBoard.forEach(row => row.fill(0));
-        updateScore({ type: RESET_SCORE });
-        resetPlayer();
+        resetGame();
       }
       updateNextPiece(nextPiece.matrix);
       update();

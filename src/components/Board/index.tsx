@@ -134,8 +134,8 @@ const Board: React.FC<{ width: number, height: number }> = ({ width, height }) =
         width={width * BOARD_SCALE}
         height={height * BOARD_SCALE} />
       <div className="StatsBoard">
-        <NextPieceDisplay piece={nextPiece} />
         <Scoreboard score={metrics.score} rows={metrics.rows} />
+        <NextPieceDisplay piece={nextPiece} />
       </div>
       {isGameOver && <GameOver startGame={startGame} />}
     </>
